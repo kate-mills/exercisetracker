@@ -25,8 +25,12 @@ app.post('/api/users', (req, res) => {
     return res.json({ error: 'username is required' })
   }
 
-  let current = uHandler.getUserByUsername(username)
+  let current = uHandler.getUser({ username })
   return !current ? res.json(uHandler.createUser(username)) : res.json(current)
+})
+
+app.get('/api/users', (req, res) => {
+  return res.json(uHandler.getAllUsers())
 })
 
 const listener = app.listen(process.env.PORT || 3000, () => {

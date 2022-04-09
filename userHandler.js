@@ -1,5 +1,5 @@
 function UserHandler() {
-  this.db = []
+  this.users = [{ username: 'test', _id: '0' }]
 
   this.createUser = function (username) {
     username = username.trim()
@@ -9,14 +9,18 @@ function UserHandler() {
       ''
     )
 
-    this.db.push({ username, _id })
+    this.users.push({ username, _id })
     return { username, _id }
   }
 
-  this.getUserByUsername = function (username) {
-    return this.db.find((user) => {
-      return user.username === username.trim()
+  this.getUser = function ({ username = '', _id = '' }) {
+    return this.users.find((user) => {
+      return user.username === username || user._id === _id
     })
+  }
+
+  this.getAllUsers = function () {
+    return this.users
   }
 }
 
