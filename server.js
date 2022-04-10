@@ -33,30 +33,61 @@ app.get('/api/users', (req, res) => {
   return res.json(uHandler.getAllUsers())
 })
 
-app.post('/api/users/:_id/exercises', addUserToRequest, (req, res) => {
-  let { description, duration } = req.body
+app.post( '/api/users/:_id/exercises', addUserToRequest, validateExerciseFields, (req, res) => {
+    let {
+      error,
+      body: { description, duration },
+    } = req
 
-  let date = req.body.date
-    ? new Date(req.body.date).toUTCString()
-    : new Date(Date.now()).toUTCString()
+    if (error) {
+      return res.json(req.error)
+    }
 
-  let [day, dt, mo, year] = date.split(' ')
+    let date = req.body.date
+      ? new Date(req.body.date).toUTCString()
+      : new Date(Date.now()).toUTCString()
 
-  let exercise = {
-    date: `${day.slice(day.length)} ${mo} ${dt} ${year}`,
-    description,
-    duration: parseInt(duration),
+    let [day, dt, mo, year] = date.split(' ')
+    let exercise = {
+      date: `${day.slice(0, day.length - 1)} ${mo} ${dt} ${year}`,
+      duration: parseInt(duration),
+    }
+
+    return res.json({ ...req.user, ...req.body, ...exercise })
   }
+)
 
-  return req.user ? res.json({ ...req.user, ...exercise }) : res.json({})
-})
+function validateExerciseFields(req, res, next) {
+  let { description, duration, date } = req.body
+
+  if (!description.length) {
+    req.error = {
+      ValidationError: `Validation failed: description is required`,
+    }
+    next() // error found so move on
+  }
+  if (!duration) {
+    req.error = { ValidationError: `Validation failed: duration is required` }
+    next() // error found so move on
+  }
+  if (!parseFloat(duration)) {
+    req.error = {
+      ValidationError: `Validation failed: duration is not a number`,
+    }
+    next() // error found so move on
+  }
+  if (!!date && new Date(date) == 'Invalid Date') {
+    req.error = { ValidationError: `Validation failed: invalid date` }
+    next() // error found so move on
+  }
+  next()
+}
 
 function addUserToRequest(req, res, next) {
-  let { body } = req
-
-  if (body[':_id']) {
-    req.user = uHandler.getUser({ _id: body[':_id'] })
-  }
+  let {
+    params: { _id },
+  } = req
+  req.user = uHandler.getUser({ _id }) || { error: `user not found` }
 
   next()
 }
