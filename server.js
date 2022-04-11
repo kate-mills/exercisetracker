@@ -33,35 +33,42 @@ app.get('/api/users', (req, res) => {
   return res.json(uHandler.getAllUsers())
 })
 
-app.post( '/api/users/:_id/exercises', addUserToRequest, validateExerciseFields, (req, res) => {
-  let {
-    error,
-    body: { description, duration },
-  } = req
+app.post(
+  '/api/users/:_id/exercises',
+  addUserToRequest,
+  validateExerciseFields,
+  (req, res) => {
+    let {
+      error,
+      body: { description, duration },
+    } = req
 
-  if(req.user.error){ return res.json(req.user) }
+    if (req.user.error) {
+      return res.json(req.user)
+    }
 
-  if (error) {
-    return res.json(error)
+    if (error) {
+      return res.json(error)
+    }
+    this.logs
+
+    let date = req.body.date
+      ? new Date(req.body.date).toUTCString()
+      : new Date(Date.now()).toUTCString()
+
+    let [day, dt, mo, year] = date.split(' ')
+    date = `${day.slice(0, day.length - 1)} ${mo} ${dt} ${year}`
+
+    let log = { ...req.user, description, duration: parseInt(duration), date }
+
+    return !!uHandler.updateUserLog(log)
+      ? res.json(log)
+      : res.json({ error: 'error updating exercise log.' })
   }
-  this.logs
+)
 
-  let date = req.body.date
-    ? new Date(req.body.date).toUTCString()
-    : new Date(Date.now()).toUTCString()
-
-  let [day, dt, mo, year] = date.split(' ')
-  date = `${day.slice(0, day.length - 1)} ${mo} ${dt} ${year}`
-
-  let log = {...req.user, description, duration: parseInt(duration), date}
-
-  return !!(uHandler.updateUserLog(log))
-    ? res.json(log)
-    : res.json({error: 'error updating exercise log.'})
-})
-
-app.get('/api/users/:_id/logs', (req, res)=> {
-  return res.json(uHandler.getLog({_id: req.params._id}))
+app.get('/api/users/:_id/logs', (req, res) => {
+  return res.json(uHandler.getLog({ _id: req.params._id }))
 })
 
 function validateExerciseFields(req, res, next) {
