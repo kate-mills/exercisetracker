@@ -7,7 +7,6 @@ require('dotenv').config()
 app.use(cors())
 app.use(express.static('public'))
 
-//app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }))
 
 const UserHandler = require('./userHandler.js')
@@ -67,9 +66,37 @@ app.post(
   }
 )
 
-app.get('/api/users/:_id/logs', (req, res) => {
-  return res.json(uHandler.getLog({ _id: req.params._id }))
+app.get('/api/users/:_id/logs', parseQueryString, (req, res) => {
+  let { error, query } = req
+  if (error) {
+    return res.json(error)
+  }
+  let { to, from, limit } = query
+
+  let userLog = uHandler.getUserLog({ _id: req.params._id, to, from, limit })
+
+  return res.json(uHandler.getUserLog({ _id: req.params._id, to, from, limit }))
 })
+
+function parseQueryString(req, res, next) {
+  let { from, to, limit } = req.query
+
+  let formatError = (msg) => `Validation failed: ${msg}`
+
+  if (!!from && new Date(from) == 'Invalid Date') {
+    req.error = { ValidationError: formatError('FROM (is not a date)') }
+    next()
+  }
+  if (!!to && new Date(to) == 'Invalid Date') {
+    req.error = { ValidationError: formatError('TO (is not a date)') }
+    next()
+  }
+  if (limit && !parseFloat(limit)) {
+    req.error = { ValidationError: formatError('LIMIT (is not a number)') }
+    next()
+  }
+  next()
+}
 
 function validateExerciseFields(req, res, next) {
   let { description, duration, date } = req.body

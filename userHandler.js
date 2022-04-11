@@ -2,35 +2,37 @@ function UserHandler() {
   this.users = [{ username: 'test', _id: '0' }]
   this.logs = []
 
-  this.createUserLog = function (_id) {
+  this.createUserLog = function(_id) {
     let { username } = this.getUser({ _id })
 
     if (username && !this.logs[_id]) {
-      this.logs[_id] = { username, count: 0, _id, log: [] }
+      this.logs[_id] = { username, _id, log: [] }
       this.logs.unshift(this.logs[_id])
       return this.logs[_id]
     }
   }
 
-  this.getLog = function ({ _id = '' }) {
-    return this.logs[_id] || this.createUserLog(_id)
+  this.getUserLog = function({ _id = '', to = '', from = '', limit = undefined }) {
+    let userLog = this.logs[_id] || this.createUserLog(_id)
+    let count = parseInt(limit) || userLog.length
+
+    let log = userLog.log.slice(0, count)
+
+    return { ...userLog, log, count: log.length }
   }
 
-  this.updateUserLog = function ({ _id, description, duration, date }) {
-    console.log('_id', _id)
-
-    this.logs[_id] = this.getLog({ _id })
+  this.updateUserLog = function({ _id, description, duration, date }) {
+    this.logs[_id] = this.getUserLog({ _id })
     if (!this.logs[_id]) {
       return false
     }
 
     this.logs[_id].log.push({ description, duration, date })
-    this.logs[_id].count += 1
 
     return true
   }
 
-  this.createUser = function (username) {
+  this.createUser = function(username) {
     username = username.trim()
 
     let _id = Array.from({ length: 24 }).reduce(
@@ -42,13 +44,13 @@ function UserHandler() {
     return { username, _id }
   }
 
-  this.getUser = function ({ username = '', _id = '' }) {
+  this.getUser = function({ username = '', _id = '' }) {
     return this.users.find((user) => {
       return user.username === username || user._id === _id
     })
   }
 
-  this.getAllUsers = function () {
+  this.getAllUsers = function() {
     return this.users
   }
 }
