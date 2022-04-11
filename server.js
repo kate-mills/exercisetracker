@@ -39,8 +39,10 @@ app.post( '/api/users/:_id/exercises', addUserToRequest, validateExerciseFields,
       body: { description, duration },
     } = req
 
+    if(req.user.error){ return res.json(req.user) }
+
     if (error) {
-      return res.json(req.error)
+      return res.json(error)
     }
 
     let date = req.body.date
@@ -48,14 +50,10 @@ app.post( '/api/users/:_id/exercises', addUserToRequest, validateExerciseFields,
       : new Date(Date.now()).toUTCString()
 
     let [day, dt, mo, year] = date.split(' ')
-    let exercise = {
-      date: `${day.slice(0, day.length - 1)} ${mo} ${dt} ${year}`,
-      duration: parseInt(duration),
-    }
+    date = `${day.slice(0, day.length - 1)} ${mo} ${dt} ${year}`
 
-    return res.json({ ...req.user, ...req.body, ...exercise })
-  }
-)
+    return res.json({ ...req.user, description, duration:parseInt(duration), date })
+})
 
 function validateExerciseFields(req, res, next) {
   let { description, duration, date } = req.body
